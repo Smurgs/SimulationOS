@@ -114,7 +114,9 @@ public:
 
                 // Enqueue PCB
                 q.push(table[int(mb[i].value)-1]);                
-                next_internal = pdevs::atomic<TIME, MSG>::infinity;
+
+                // Set next internal
+                next_internal = 0;
                 
                 // If not running, get a PCB from queue and start it
                 if (!processing){
@@ -122,33 +124,34 @@ public:
                     PCB temp = q.front();
                     q.pop();
                     aux.port = "ctrlApp" + to_string(temp.PID);
-                    aux.value = 1;
+                    aux.value = temp.PID;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
-                    next_internal = 0;
                 }
                 
             // Active process enters IO
             }else if (mb[i].port == startIO){
+                // Change states
                 table[int(mb[i].value)-1].state = STATE_WAITING;
-                next_internal = pdevs::atomic<TIME, MSG>::infinity;
                 processing = false;
+                
                 // Start executing next process if available
                 if (!q.empty()){
                     processing = true;
                     PCB temp = q.front();
                     q.pop();
                     aux.port = "ctrlApp" + to_string(temp.PID);
-                    aux.value = 1;
+                    aux.value = temp.PID;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
+
+                    // Set next internal
                     next_internal = 0;
                 }
 
             }else if (mb[i].port == processComplete) {
                 // Mark running process as terminated
                 table[int(mb[i].value)-1].state = STATE_TERMINATED;
-                next_internal = pdevs::atomic<TIME, MSG>::infinity;
                 processing = false;
 
                 // Start executing next process if available
@@ -157,9 +160,11 @@ public:
                     PCB temp = q.front();
                     q.pop();
                     aux.port = "ctrlApp" + to_string(temp.PID);
-                    aux.value = 1;
+                    aux.value = temp.PID;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
+                    
+                    // Set next internal
                     next_internal = 0;
                 }
             }
