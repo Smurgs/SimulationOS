@@ -42,6 +42,7 @@ private:
     string writeSCI;
     string readSCI;
     string ctrlIn;
+    string exitSCI;
   
     // STATE VARIABLES
     bool executing;
@@ -59,6 +60,7 @@ public:
         ctrlIn = "ctrlApp" + to_string(PID);
         writeSCI = "writeSCI";
         readSCI = "readSCI";
+        exitSCI = "exitSCI";
 
         executing = false;
         next_internal = pdevs::atomic<TIME, MSG>::infinity;
@@ -95,9 +97,12 @@ public:
             }else {
                 aux.port = writeSCI;
             }
-            aux.value = PID;
-            out_put.push_back(aux);
+        }else {
+            aux.port = exitSCI;
         }
+
+        aux.value = PID;
+        out_put.push_back(aux);
         return out_put;
     }
 

@@ -37,7 +37,9 @@ private:
     // PARAMETERS
     string writeSCI; 
     string readSCI;
+    string exitSCI;
     string doneIO;
+    string processComplete;
    
     //STATE VARIABLES
     TIME next_internal;
@@ -51,7 +53,9 @@ public:
     explicit SystemInterface() noexcept {   
         writeSCI = string("writeSCI");
         readSCI = string("readSCI");
+        exitSCI = string("exitSCI");
         doneIO = string("doneIO");
+        processComplete = string("processComplete");
         out_put.clear();
 
         next_internal = pdevs::atomic<TIME, MSG>::infinity;
@@ -102,6 +106,12 @@ public:
                 next_internal = 0;
                 aux.value = mb[i].value;
                 aux.port = "IOApp" + to_string(int(mb[i].value));
+                out_put.push_back(aux);
+
+            }else if (mb[i].port == exitSCI) {
+                next_internal = 0;
+                aux.value = mb[i].value;
+                aux.port = processComplete;
                 out_put.push_back(aux);
 
             }else {

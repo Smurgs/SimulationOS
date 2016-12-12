@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
     shared_ptr<flattened_coupled<Time, Message>> TOP(new flattened_coupled<Time, Message>( 
     {input_test_generator, kernel, program1, program2, sci, write1, write2, read1, read2}, 
     {}, 
-    {{input_test_generator, kernel},{kernel, program1}, {kernel, program2},{program1, sci}, {program2, sci}, {sci, write1}, {write1, sci}, {sci, write2}, {write2, sci},{sci, read1}, {read1, sci}, {sci, read2}, {read2, sci},{sci, program1}, {sci, program2}, {write1,kernel},{write2,kernel},{read1,kernel},{read2,kernel}}, 
+    {{input_test_generator, kernel},{sci, kernel}, {kernel, program1}, {kernel, program2},{program1, sci}, {program2, sci}, {sci, write1}, {write1, sci}, {sci, write2}, {write2, sci},{sci, read1}, {read1, sci}, {sci, read2}, {read2, sci},{sci, program1}, {sci, program2}, {write1,kernel},{write2,kernel},{read1,kernel},{read2,kernel}}, 
     {kernel, program1, program2, sci, write1, write2, read1, read2}
     ));  
  

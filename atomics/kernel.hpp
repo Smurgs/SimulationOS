@@ -33,6 +33,9 @@ using namespace std;
 char STATE_WAITING = 1;
 char STATE_READY = 2;
 char STATE_RUNNING = 3;
+char STATE_TERMINATED = 4;
+char STATE_NEW = 5;
+char STATE_UNDEFINED = 6;
 
 /**
  * @class Kernel
@@ -45,6 +48,7 @@ private:
     string startIO;
     string doneIO;
     string appIn;
+    string processComplete;
   
     // STATE VARIABLES
     bool processing;
@@ -62,6 +66,7 @@ public:
         startIO = string("startIO");
         doneIO = string("doneIO");
         appIn = string("appIn");
+        processComplete = string("processComplete");
         processing = false;
         TIME next_internal = pdevs::atomic<TIME, MSG>::infinity;
         out_put.clear();
@@ -128,6 +133,24 @@ public:
                 table[int(mb[i].value)-1].state = STATE_WAITING;
                 next_internal = pdevs::atomic<TIME, MSG>::infinity;
                 processing = false;
+                // Start executing next process if available
+                if (!q.empty()){
+                    processing = true;
+                    PCB temp = q.front();
+                    q.pop();
+                    aux.port = "ctrlApp" + to_string(temp.PID);
+                    aux.value = 1;
+                    out_put.push_back(aux);
+                    table[temp.PID-1].state = STATE_RUNNING;
+                    next_internal = 0;
+                }
+
+            }else if (mb[i].port == processComplete) {
+                // Mark running process as terminated
+                table[int(mb[i].value)-1].state = STATE_TERMINATED;
+                next_internal = pdevs::atomic<TIME, MSG>::infinity;
+                processing = false;
+
                 // Start executing next process if available
                 if (!q.empty()){
                     processing = true;
