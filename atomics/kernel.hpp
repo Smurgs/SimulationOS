@@ -55,14 +55,14 @@ private:
     TIME next_internal;
     vector<MSG> out_put;
     queue<PCB> q;
-    PCB table[2];
+    PCB table[20];
   
 public:
 
     /**
     * @constructor 
     */
-    explicit Kernel() noexcept { 
+    explicit Kernel(int number_of_processes) noexcept { 
         startIO = string("startIO");
         doneIO = string("doneIO");
         appIn = string("appIn");
@@ -70,8 +70,9 @@ public:
         processing = false;
         TIME next_internal = pdevs::atomic<TIME, MSG>::infinity;
         out_put.clear();
-        table[0] = {1, STATE_READY};
-        table[1] = {2, STATE_READY};
+        for (int i = 0; i < number_of_processes; i++){
+            table[i] = { char(i+1), STATE_NEW };
+        }
     }
 
     /**

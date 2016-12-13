@@ -50,7 +50,9 @@ int main(int argc, char ** argv) {
     ifstream file(test_file);
     string str;
     string file_contents;
+    int process_count = 0;
     while (getline(file, str)){
+        process_count++;
         file_contents += str;
         file_contents.push_back('\n');
     }  
@@ -85,28 +87,66 @@ int main(int argc, char ** argv) {
     cout << "Creating atomic models" << endl;
   
     // DEFINE ATOMIC MODELS
-    auto kernel = make_atomic_ptr< Kernel<Time,Message>>();
-    auto program1 = make_atomic_ptr< Program<Time,Message>, int>(1); 
-    auto program2 = make_atomic_ptr< Program<Time,Message>, int>(2); 
-    auto sci = make_atomic_ptr< SystemInterface<Time,Message>>(); 
-    auto write1 = make_atomic_ptr< RWFunction<Time,Message>, string>(string("WriteFunction1")); 
-    auto write2 = make_atomic_ptr< RWFunction<Time,Message>, string>(string("WriteFunction2")); 
-    auto read1 = make_atomic_ptr< RWFunction<Time,Message>, string>(string("ReadFunction1")); 
-    auto read2 = make_atomic_ptr< RWFunction<Time,Message>, string>(string("ReadFunction2")); 
-  
+    std::vector<std::shared_ptr<model<Time>>> models;
+    std::vector<std::shared_ptr<model<Time>>> eic;
+    std::vector<std::pair<std::shared_ptr<model<Time>>, std::shared_ptr<model<Time>>>> ic;
+    std::vector<std::shared_ptr<model<Time>>> eoc;
 
+    auto kernel = make_atomic_ptr< Kernel<Time,Message>, int>(process_count);
+    auto sci = make_atomic_ptr< SystemInterface<Time,Message>>(); 
+
+    // Add to model
+    models.push_back(input_test_generator);
+    models.push_back(kernel);
+    models.push_back(sci);
+
+    // Add pair to ic vector
+    ic.push_back(std::make_pair(input_test_generator, kernel));
+    ic.push_back(std::make_pair(sci, kernel));
+
+    // Add to eoc
+    eoc.push_back(kernel);
+    eoc.push_back(sci);
+
+    for (int i = 1; i <= process_count; i++){
+        // Create program model and its read/write models
+        auto program = make_atomic_ptr<Program<Time, Message>, int>(i);
+        auto write = make_atomic_ptr< RWFunction<Time,Message>, string>(string("WriteFunction") + to_string(i)); 
+        auto read = make_atomic_ptr< RWFunction<Time,Message>, string>(string("ReadFunction") + to_string(i)); 
+
+        // Add to models vector
+        models.push_back(program);
+        models.push_back(write);
+        models.push_back(read);
+
+        // Add pairs to ic vector
+        ic.push_back(std::make_pair(program, sci));
+        ic.push_back(std::make_pair(kernel, program));
+        ic.push_back(std::make_pair(sci, read));
+        ic.push_back(std::make_pair(sci, write));
+        ic.push_back(std::make_pair(read, sci));
+        ic.push_back(std::make_pair(write, sci));
+        ic.push_back(std::make_pair(write, kernel));
+        ic.push_back(std::make_pair(read, kernel));
+
+        // Add to eoc
+        eoc.push_back(program);
+        eoc.push_back(write);
+        eoc.push_back(read);
+    }
+
+  
     shared_ptr<flattened_coupled<Time, Message>> TOP(new flattened_coupled<Time, Message>( 
-    {input_test_generator, kernel, program1, program2, sci, write1, write2, read1, read2}, 
-    {}, 
-    {{input_test_generator, kernel},{sci, kernel}, {kernel, program1}, {kernel, program2},{program1, sci}, {program2, sci}, {sci, write1}, {write1, sci}, {sci, write2}, {write2, sci},{sci, read1}, {read1, sci}, {sci, read2}, {read2, sci},{sci, program1}, {sci, program2}, {write1,kernel},{write2,kernel},{read1,kernel},{read2,kernel}}, 
-    {kernel, program1, program2, sci, write1, write2, read1, read2}
-    ));  
+    models,
+    eic,
+    ic,
+    eoc));  
  
     cout << "Preparing runner" << endl;
     Time initial_time = Time(0);
     ofstream out_data("output.txt");  
     runner<Time, Message> r(TOP, initial_time, out_data, [](ostream& os, Message m){ os << m;});
-    Time end_time = Time(2500); 
+    Time end_time = Time(100000); 
 
     cout << "Starting simulation until time: " << end_time << "seconds" << endl;
     auto start = hclock::now();
