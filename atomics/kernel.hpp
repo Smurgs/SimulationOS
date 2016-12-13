@@ -23,6 +23,8 @@
 #include <random>
 #include <boost/simulation/pdevs/atomic.hpp>
 
+#include "../include/Scheduler.hpp"
+#include "../include/FCFS.hpp"
 #include "../data_structures/message.hpp" 
 #include "../data_structures/structures.h" 
 
@@ -55,6 +57,7 @@ private:
     TIME next_internal;
     vector<MSG> out_put;
     queue<PCB> q;
+    Scheduler *scheduler = new FCFS();
     PCB table[20];
   
 public:
@@ -114,7 +117,7 @@ public:
                 table[int(mb[i].value)-1].state = STATE_READY;
 
                 // Enqueue PCB
-                q.push(table[int(mb[i].value)-1]);                
+                scheduler->schedule(table[int(mb[i].value)-1]);                
 
                 // Set next internal
                 next_internal = 0;
@@ -122,12 +125,13 @@ public:
                 // If not running, get a PCB from queue and start it
                 if (!processing){
                     processing = true;
-                    PCB temp = q.front();
-                    q.pop();
-                    aux.port = "ctrlApp" + to_string(temp.PID);
-                    aux.value = temp.PID;
-                    out_put.push_back(aux);
-                    table[temp.PID-1].state = STATE_RUNNING;
+                    PCB temp;
+                    if (scheduler->getNext(temp)){
+                        aux.port = "ctrlApp" + to_string(temp.PID);
+                        aux.value = temp.PID;
+                        out_put.push_back(aux);
+                        table[temp.PID-1].state = STATE_RUNNING;
+                    }
                 }
                 
             // Active process enters IO
@@ -137,10 +141,9 @@ public:
                 processing = false;
                 
                 // Start executing next process if available
-                if (!q.empty()){
+                PCB temp;
+                if (scheduler->getNext(temp)){
                     processing = true;
-                    PCB temp = q.front();
-                    q.pop();
                     aux.port = "ctrlApp" + to_string(temp.PID);
                     aux.value = temp.PID;
                     out_put.push_back(aux);
@@ -156,10 +159,9 @@ public:
                 processing = false;
 
                 // Start executing next process if available
-                if (!q.empty()){
+                PCB temp;
+                if (scheduler->getNext(temp)){
                     processing = true;
-                    PCB temp = q.front();
-                    q.pop();
                     aux.port = "ctrlApp" + to_string(temp.PID);
                     aux.value = temp.PID;
                     out_put.push_back(aux);
