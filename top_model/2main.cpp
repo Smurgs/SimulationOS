@@ -23,7 +23,6 @@
 #include "../vendor/input_event_stream.hpp"
 #include "../data_structures/message.hpp"
 #include "../atomics/program.hpp"
-#include "../atomics/programForks.hpp"
 #include "../atomics/rw_function.hpp"
 #include "../atomics/system_interface.hpp"
 #include "../atomics/kernel.hpp"
@@ -95,26 +94,21 @@ int main(int argc, char ** argv) {
 
     auto kernel = make_atomic_ptr< Kernel<Time,Message>, int>(process_count);
     auto sci = make_atomic_ptr< SystemInterface<Time,Message>>(); 
-    auto forking_program = make_atomic_ptr<ProgramFork<Time, Message>, int>(1);
 
     // Add to model
     models.push_back(input_test_generator);
     models.push_back(kernel);
     models.push_back(sci);
-    models.push_back(forking_program);
 
     // Add pair to ic vector
     ic.push_back(std::make_pair(input_test_generator, kernel));
     ic.push_back(std::make_pair(sci, kernel));
-    ic.push_back(std::make_pair(forking_program, sci));
-    ic.push_back(std::make_pair(kernel, forking_program));
 
     // Add to eoc
     eoc.push_back(kernel);
     eoc.push_back(sci);
-    eoc.push_back(forking_program);
 
-    for (int i = 2; i <= 20; i++){
+    for (int i = 1; i <= process_count; i++){
         // Create program model and its read/write models
         auto program = make_atomic_ptr<Program<Time, Message>, int>(i);
         auto write = make_atomic_ptr< RWFunction<Time,Message>, string>(string("WriteFunction") + to_string(i)); 

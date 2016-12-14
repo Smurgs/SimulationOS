@@ -38,8 +38,10 @@ private:
     string writeSCI; 
     string readSCI;
     string exitSCI;
+    string forkSCI;
     string doneIO;
     string processComplete;
+    string processFork;
    
     //STATE VARIABLES
     TIME next_internal;
@@ -54,8 +56,10 @@ public:
         writeSCI = string("writeSCI");
         readSCI = string("readSCI");
         exitSCI = string("exitSCI");
+        forkSCI = string("forkSCI");
         doneIO = string("doneIO");
         processComplete = string("processComplete");
+        processFork = string("processFork");
         out_put.clear();
 
         next_internal = pdevs::atomic<TIME, MSG>::infinity;
@@ -114,10 +118,11 @@ public:
                 aux.port = processComplete;
                 out_put.push_back(aux);
 
-            }else {
-                if (next_internal != pdevs::atomic<TIME, MSG>::infinity) {
-                    next_internal = next_internal - t;
-                }
+            }else if (mb[i].port == forkSCI) {
+                next_internal = 0;
+                aux.value = mb[i].value;
+                aux.port = processFork;
+                out_put.push_back(aux);
             }
        }
     }

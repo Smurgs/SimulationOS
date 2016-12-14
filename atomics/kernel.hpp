@@ -51,6 +51,7 @@ private:
     string doneIO;
     string appIn;
     string processComplete;
+    string processFork;
   
     // STATE VARIABLES
     bool processing;
@@ -59,6 +60,20 @@ private:
     queue<PCB> q;
     Scheduler *scheduler = new FCFS();
     PCB table[20];
+
+    /*
+     * Returns index of first free PCB, or -1 on failure
+     */
+    int get_free_pcb(){
+        int i = 0;
+        while (!(table[i].state==STATE_TERMINATED || table[i].state==STATE_UNDEFINED)){
+            i++;
+            if(i >= 20){
+                return -1;
+            }
+        }
+        return i;
+    }
   
 public:
 
@@ -70,11 +85,12 @@ public:
         doneIO = string("doneIO");
         appIn = string("appIn");
         processComplete = string("processComplete");
+        processFork = string("processFork");
         processing = false;
         TIME next_internal = pdevs::atomic<TIME, MSG>::infinity;
         out_put.clear();
-        for (int i = 0; i < number_of_processes; i++){
-            table[i] = { char(i+1), STATE_NEW };
+        for (int i = 0; i < 20; i++){
+            table[i] = { char(i+1), STATE_UNDEFINED };
         }
     }
 
@@ -169,6 +185,21 @@ public:
                     
                     // Set next internal
                     next_internal = 0;
+                }
+
+            }else if (mb[i].port == processFork) {
+                //Find free PCB
+                int index = get_free_pcb();
+
+                if (index != -1){
+                    // Prepare PCB for queue
+                    table[index].state = STATE_READY;
+
+                    // Add PCB to queue
+                    scheduler->schedule(table[index]);
+
+                }else{
+                    cout << "No PCB available. Failed to fork." << endl;
                 }
             }
         }

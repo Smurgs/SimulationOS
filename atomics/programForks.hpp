@@ -1,11 +1,11 @@
 // SYSC 4001 - System Call Interface
-// Atomic Model - Program
+// Atomic Model - Program Fork
 // Nomvember 2016
 // Stefan Murga
 // Nwakpadolu Soluzochukwu John
 
-#ifndef PROGRAM_HPP
-#define PROGRAM_HPP
+#ifndef PROGRAM_FORK_HPP
+#define PROGRAM_FORK_HPP
 
 #include <math.h> 
 #include <assert.h>
@@ -30,10 +30,10 @@ using namespace std;
 
 
 /**
- * @class Program
+ * @class Program Fork
 */
 template<class TIME, class MSG>
-class Program : public pdevs::atomic<TIME, MSG>{ 
+class ProgramFork : public pdevs::atomic<TIME, MSG>{ 
 private:
 
     // PARAMETERS
@@ -43,41 +43,42 @@ private:
     string readSCI;
     string ctrlIn;
     string exitSCI;
+    string forkSCI;
   
     // STATE VARIABLES
     bool executing;
     TIME next_internal;
-    int IO_count;
+    int fork_count;
   
 public:
 
     /**
     * @constructor 
     */
-    explicit Program(int pid) noexcept { 
+    explicit ProgramFork(int pid) noexcept { 
         PID = pid;
         doneIO = "IOApp" + to_string(PID);
         ctrlIn = "ctrlApp" + to_string(PID);
         writeSCI = "writeSCI";
         readSCI = "readSCI";
         exitSCI = "exitSCI";
+        forkSCI = "forkSCI";
 
         executing = false;
-        next_internal = pdevs::atomic<TIME, MSG>::infinity;
-        IO_count = 0;
         srand (time(NULL));
+        next_internal = pdevs::atomic<TIME, MSG>::infinity;
+        fork_count = 0;
     }
 
     /**
     * @Internal
     */
     void internal() noexcept {  
-        executing = false;
-        next_internal = pdevs::atomic<TIME, MSG>::infinity;
-        IO_count++;
+        next_internal = rand() % 100 + 1;
+        fork_count++;
 
-        if (IO_count > 10){
-            IO_count = 0;
+        if (fork_count > 15){
+            next_internal = pdevs::atomic<TIME, MSG>::infinity;
         }
     }
 
@@ -95,12 +96,8 @@ public:
         vector<MSG> out_put;
         MSG aux;
 
-        if (IO_count < 10){
-            if (IO_count % 2 == 0) {
-                aux.port = readSCI;
-            }else {
-                aux.port = writeSCI;
-            }
+        if (fork_count < 15){
+            aux.port = forkSCI;
         }else {
             aux.port = exitSCI;
         }
