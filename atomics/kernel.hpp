@@ -25,6 +25,7 @@
 
 #include "../include/Scheduler.hpp"
 #include "../include/FCFS.hpp"
+#include "memoryModel.hpp"
 #include "../data_structures/message.hpp" 
 #include "../data_structures/structures.h" 
 
@@ -52,6 +53,9 @@ private:
     string appIn;
     string processComplete;
     string processFork;
+    string requestMemory;
+    string releaseMemory;
+    string responseMemory;
   
     // STATE VARIABLES
     bool processing;
@@ -86,6 +90,9 @@ public:
         appIn = string("appIn");
         processComplete = string("processComplete");
         processFork = string("processFork");
+        requestMemory = string("requestMemory");
+        releaseMemory = string("releaseMemory");
+        responseMemory = string("responseMemory");
         processing = false;
         TIME next_internal = pdevs::atomic<TIME, MSG>::infinity;
         out_put.clear();
@@ -126,16 +133,52 @@ public:
 
         MSG aux;
         for (int i = 0; i < mb.size(); i++) {
-            // New process submitted by long term scheduler (AKA input file)
-            // OR i/o complete
-            if (mb[i].port == appIn || mb[i].port == doneIO){
-                // Set PCB state to Ready
-                table[int(mb[i].value)-1].state = STATE_READY;
-
-                // If input from file, set program run type (IO or fork)
+            if (mb[i].port == appIn){
+                // Set program run type
                 if (mb[i].port == appIn) {
                     table[int(mb[i].value)-1].type = mb[i].value2;
                 }
+
+                // Request memory
+                aux.port = requestMemory;
+                aux.value = mb[i].value;
+                aux.value2 = 5000;
+                out_put.push_back(aux);
+
+            }else if (mb[i].port == responseMemory){
+                // Read memory request response
+                if (mb[i].value2 == MEMORY_NOT_OK){
+                    cout << "Memory not available. Failed to start process" << endl;
+                    table[int(mb[i].value)-1].state = STATE_UNDEFINED;
+                    continue;
+                }
+
+                // Set PCB state to Ready
+                table[int(mb[i].value)-1].state = STATE_READY;
+
+                // Enqueue PCB
+                scheduler->schedule(table[int(mb[i].value)-1]);                
+
+                // Set next internal
+                next_internal = 0;
+
+                // If not running, get a PCB from queue and start it
+                if (!processing){
+                    processing = true;
+                    PCB temp;
+                    if (scheduler->getNext(temp)){
+                        aux.port = "ctrlApp" + to_string(temp.PID);
+                        aux.value = temp.PID;
+                        aux.value2 = temp.type;
+                        out_put.push_back(aux);
+                        table[temp.PID-1].state = STATE_RUNNING;
+                    }
+                }
+
+            // IO complete
+            }else if (mb[i].port == doneIO){
+                // Set PCB state to Ready
+                table[int(mb[i].value)-1].state = STATE_READY;
 
                 // Enqueue PCB
                 scheduler->schedule(table[int(mb[i].value)-1]);                
@@ -181,6 +224,12 @@ public:
                 table[int(mb[i].value)-1].state = STATE_TERMINATED;
                 processing = false;
 
+                // Send message to MemoryModel to release memory
+                MSG memMsg;
+                memMsg.port = releaseMemory;
+                memMsg.value = mb[i].value;
+                out_put.push_back(memMsg);
+
                 // Start executing next process if available
                 PCB temp;
                 if (scheduler->getNext(temp)){
@@ -201,11 +250,15 @@ public:
 
                 if (index != -1){
                     // Prepare PCB for queue
-                    table[index].state = STATE_READY;
                     table[index].type = PROGRAM_IO;
 
-                    // Add PCB to queue
-                    scheduler->schedule(table[index]);
+                    // Request memory
+                    aux.port = requestMemory;
+                    aux.value = table[index].PID;
+                    aux.value2 = 50;
+                    out_put.push_back(aux);
+
+                    next_internal = 0;
 
                 }else{
                     cout << "No PCB available. Failed to fork." << endl;

@@ -27,6 +27,7 @@
 #include "../atomics/rw_function.hpp"
 #include "../atomics/system_interface.hpp"
 #include "../atomics/kernel.hpp"
+#include "../atomics/memoryModel.hpp"
 
 
 using namespace std;
@@ -96,19 +97,24 @@ int main(int argc, char ** argv) {
 
     auto kernel = make_atomic_ptr< Kernel<Time,Message>, int>(process_count);
     auto sci = make_atomic_ptr< SystemInterface<Time,Message>>(); 
+    auto memory = make_atomic_ptr<MemoryModel<Time,Message>, int>(10000);
 
     // Add to model
     models.push_back(input_test_generator);
     models.push_back(kernel);
     models.push_back(sci);
+    models.push_back(memory);
 
     // Add pair to ic vector
     ic.push_back(std::make_pair(input_test_generator, kernel));
     ic.push_back(std::make_pair(sci, kernel));
+    ic.push_back(std::make_pair(kernel, memory));
+    ic.push_back(std::make_pair(memory,kernel));
 
     // Add to eoc
     eoc.push_back(kernel);
     eoc.push_back(sci);
+    eoc.push_back(memory);
 
     for (int i = 1; i <= 20; i++){
         // Create program model and its read/write models
