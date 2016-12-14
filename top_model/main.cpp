@@ -79,6 +79,7 @@ int main(int argc, char ** argv) {
         ss >> t_next; //takes the two fist numbers in the line. The time is defined as a numerator and denominator        
         ss >> m_next.port;
         ss >> m_next.value;
+        ss >> m_next.value2;
         
         string thrash;
         ss >> thrash;

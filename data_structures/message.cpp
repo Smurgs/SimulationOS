@@ -11,7 +11,7 @@
 /***************************************************/
 
 ostream& operator<<(ostream& os, const Message_t& msg) {
-  os << msg.port << " " << msg.value;
+  os << msg.port << " " << msg.value << " " << msg.value2;
   return os;
 }
 
@@ -22,5 +22,6 @@ ostream& operator<<(ostream& os, const Message_t& msg) {
 istream& operator>> (istream& is, Message_t& msg) {
   is >> msg.port;
   is >> msg.value;
+  is >> msg.value2;
   return is;
 }
