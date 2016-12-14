@@ -132,6 +132,11 @@ public:
                 // Set PCB state to Ready
                 table[int(mb[i].value)-1].state = STATE_READY;
 
+                // If input from file, set program run type (IO or fork)
+                if (mb[i].port == appIn) {
+                    table[int(mb[i].value)-1].type = mb[i].value2;
+                }
+
                 // Enqueue PCB
                 scheduler->schedule(table[int(mb[i].value)-1]);                
 
@@ -145,6 +150,7 @@ public:
                     if (scheduler->getNext(temp)){
                         aux.port = "ctrlApp" + to_string(temp.PID);
                         aux.value = temp.PID;
+                        aux.value2 = temp.type;
                         out_put.push_back(aux);
                         table[temp.PID-1].state = STATE_RUNNING;
                     }
@@ -162,6 +168,7 @@ public:
                     processing = true;
                     aux.port = "ctrlApp" + to_string(temp.PID);
                     aux.value = temp.PID;
+                    aux.value2 = temp.type;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
 
@@ -180,6 +187,7 @@ public:
                     processing = true;
                     aux.port = "ctrlApp" + to_string(temp.PID);
                     aux.value = temp.PID;
+                    aux.value2 = temp.type;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
                     
@@ -194,6 +202,7 @@ public:
                 if (index != -1){
                     // Prepare PCB for queue
                     table[index].state = STATE_READY;
+                    table[index].type = PROGRAM_IO;
 
                     // Add PCB to queue
                     scheduler->schedule(table[index]);

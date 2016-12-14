@@ -38,16 +38,19 @@ private:
 
     // PARAMETERS
     int PID;
+    int type;
     string doneIO;
     string writeSCI;
     string readSCI;
     string ctrlIn;
     string exitSCI;
+    string forkSCI;
   
     // STATE VARIABLES
     bool executing;
     TIME next_internal;
     int IO_count;
+    int fork_count;
   
 public:
 
@@ -61,10 +64,13 @@ public:
         writeSCI = "writeSCI";
         readSCI = "readSCI";
         exitSCI = "exitSCI";
+        forkSCI = "forkSCI";
 
         executing = false;
         next_internal = pdevs::atomic<TIME, MSG>::infinity;
         IO_count = 0;
+        fork_count = 0;
+        type = 0;
         srand (time(NULL));
     }
 
@@ -72,12 +78,25 @@ public:
     * @Internal
     */
     void internal() noexcept {  
-        executing = false;
-        next_internal = pdevs::atomic<TIME, MSG>::infinity;
-        IO_count++;
+        if (type == PROGRAM_IO){
+            executing = false;
+            next_internal = pdevs::atomic<TIME, MSG>::infinity;
+            IO_count++;
 
-        if (IO_count > 10){
-            IO_count = 0;
+            if (IO_count > 10){
+                IO_count = 0;
+            }
+
+        }else if (type == PROGRAM_FORK) {
+            next_internal = rand() % 100 + 1;
+            fork_count++;
+
+            if (fork_count > 15) {
+                next_internal = pdevs::atomic<TIME, MSG>::infinity;
+            }
+
+        }else {
+            cout << "Error: program type not set" << endl;
         }
     }
 
@@ -95,18 +114,29 @@ public:
         vector<MSG> out_put;
         MSG aux;
 
-        if (IO_count < 10){
-            if (IO_count % 2 == 0) {
-                aux.port = readSCI;
+        if (type == PROGRAM_IO){
+            if (IO_count < 10){
+                if (IO_count % 2 == 0) {
+                    aux.port = readSCI;
+                }else {
+                    aux.port = writeSCI;
+                }
             }else {
-                aux.port = writeSCI;
+                aux.port = exitSCI;
             }
-        }else {
-            aux.port = exitSCI;
+
+        }else if(type == PROGRAM_FORK){
+            if (fork_count < 15){
+                aux.port = forkSCI;
+            }else {
+                aux.port = exitSCI;
+            }
+
+        }else{
+            cout << "Error: program type not set" << endl;
         }
 
         aux.value = PID;
-        aux.value2 = 5;
         out_put.push_back(aux);
         return out_put;
     }
@@ -123,6 +153,11 @@ public:
             if (mb[i].port == ctrlIn) {
                 executing = true;
                 next_internal = rand() % 100 + 1;
+
+                // Set run type
+                if (mb[i].value2 != 0) {
+                    type = mb[i].value2;
+                }
             }
         }
     }

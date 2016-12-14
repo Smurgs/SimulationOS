@@ -11,6 +11,7 @@
 typedef struct PCB {
     char PID;
     char state;
+    char type;
 } PCB;
 
 // Node definition

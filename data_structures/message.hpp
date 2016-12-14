@@ -5,6 +5,9 @@
 #include <iostream>
 #include <string>
 
+#define PROGRAM_IO      1
+#define PROGRAM_FORK    2
+
 using namespace std;
 
 /*******************************************/
