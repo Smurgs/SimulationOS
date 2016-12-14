@@ -106,6 +106,7 @@ public:
         }
 
         aux.value = PID;
+        aux.value2 = 5;
         out_put.push_back(aux);
         return out_put;
     }
