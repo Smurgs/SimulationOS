@@ -42,13 +42,23 @@ using Message = Message_t;
 
 int main(int argc, char ** argv) {
 
-    if (argc < 2) {
-        cout << "you are using this program with wrong parameters. Te program should be invoked as follow:";
-        cout << argv[0] << " path to the input file " << endl;
+    if (argc < 3) {
+        cout << "Invalid command line args" << endl;
+        cout << argv[0] << "-[F|P|E] path_to_input_file" << endl;
         return 1;  
     }
-  
-    string test_file = argv[1];
+    
+    int schedulerOption;
+    if(argv[1][1] == 'F'){
+        schedulerOption = SCHEDULER_FCFS;
+    }else if(argv[1][1] == 'P'){
+        schedulerOption = SCHEDULER_PRIORITY;
+    }else{
+        cout << "Invalid scheduling option" <<endl;
+        exit(0);
+    }
+
+    string test_file = argv[2];
     ifstream file(test_file);
     string str;
     string file_contents;
@@ -81,6 +91,8 @@ int main(int argc, char ** argv) {
         ss >> m_next.port;
         ss >> m_next.value;
         ss >> m_next.value2;
+        ss >> m_next.value3;
+        ss >> m_next.value4;
         
         string thrash;
         ss >> thrash;
@@ -95,7 +107,7 @@ int main(int argc, char ** argv) {
     std::vector<std::pair<std::shared_ptr<model<Time>>, std::shared_ptr<model<Time>>>> ic;
     std::vector<std::shared_ptr<model<Time>>> eoc;
 
-    auto kernel = make_atomic_ptr< Kernel<Time,Message>, int>(process_count);
+    auto kernel = make_atomic_ptr< Kernel<Time,Message>, int, int>(process_count, schedulerOption);
     auto sci = make_atomic_ptr< SystemInterface<Time,Message>>(); 
     auto memory = make_atomic_ptr<MemoryModel<Time,Message>, int>(10000);
 

@@ -121,8 +121,13 @@ public:
                 int PID = mb[i].value;
                 int block_size = mb[i].value2;
 
-                // Search for hole of sufficient size
                 bool memoryFreeFlag = true;
+                // If memory request was too large
+                if ((memorySize - block_size) <= 0) {
+                    memoryFreeFlag = false;
+                }
+
+                // Search for hole of sufficient size
                 for (int j = 0; j <= (memorySize - block_size); j++){
                     memoryFreeFlag = true;
                     for (int k = 0; k < block_size; k++){
@@ -145,6 +150,7 @@ public:
                         break;
                     }
                 }
+
                 
                 // Prep output message
                 next_internal = 0;

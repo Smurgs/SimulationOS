@@ -25,9 +25,13 @@
 
 #include "../include/Scheduler.hpp"
 #include "../include/FCFS.hpp"
+#include "../include/PriorityQueue.hpp"
 #include "memoryModel.hpp"
 #include "../data_structures/message.hpp" 
 #include "../data_structures/structures.h" 
+
+#define SCHEDULER_FCFS      1
+#define SCHEDULER_PRIORITY  2
 
 using namespace boost::simulation::pdevs;
 using namespace boost::simulation;
@@ -56,13 +60,13 @@ private:
     string requestMemory;
     string releaseMemory;
     string responseMemory;
+    Scheduler *scheduler;
   
     // STATE VARIABLES
     bool processing;
     TIME next_internal;
     vector<MSG> out_put;
     queue<PCB> q;
-    Scheduler *scheduler = new FCFS();
     PCB table[20];
 
     /*
@@ -84,7 +88,7 @@ public:
     /**
     * @constructor 
     */
-    explicit Kernel(int number_of_processes) noexcept { 
+    explicit Kernel(int number_of_processes, int scheduler_option) noexcept { 
         startIO = string("startIO");
         doneIO = string("doneIO");
         appIn = string("appIn");
@@ -93,9 +97,19 @@ public:
         requestMemory = string("requestMemory");
         releaseMemory = string("releaseMemory");
         responseMemory = string("responseMemory");
+        
+        // Set scheduler
+        if (scheduler_option == SCHEDULER_FCFS){
+            scheduler = new FCFS();
+        }else if (scheduler_option == SCHEDULER_PRIORITY){
+            scheduler = new PriorityQueue();
+        }
+
         processing = false;
         TIME next_internal = pdevs::atomic<TIME, MSG>::infinity;
         out_put.clear();
+
+        // Init PCB table
         for (int i = 0; i < 20; i++){
             table[i] = { char(i+1), STATE_UNDEFINED };
         }
@@ -134,15 +148,14 @@ public:
         MSG aux;
         for (int i = 0; i < mb.size(); i++) {
             if (mb[i].port == appIn){
-                // Set program run type
-                if (mb[i].port == appIn) {
-                    table[int(mb[i].value)-1].type = mb[i].value2;
-                }
+                // Set PCB data
+                table[int(mb[i].value)-1].type = mb[i].value2;
+                table[int(mb[i].value)-1].priority = mb[i].value3;
 
                 // Request memory
                 aux.port = requestMemory;
-                aux.value = mb[i].value;
-                aux.value2 = 5000;
+                aux.value = mb[i].value;        // PID
+                aux.value2 = mb[i].value4;      // Memory block size
                 out_put.push_back(aux);
 
             }else if (mb[i].port == responseMemory){
@@ -250,12 +263,13 @@ public:
 
                 if (index != -1){
                     // Prepare PCB for queue
-                    table[index].type = PROGRAM_IO;
+                    table[index].type = mb[i].value2;
+                    table[index].priority = mb[i].value3;
 
                     // Request memory
                     aux.port = requestMemory;
                     aux.value = table[index].PID;
-                    aux.value2 = 50;
+                    aux.value2 = mb[i].value4;      // Memory block size
                     out_put.push_back(aux);
 
                     next_internal = 0;

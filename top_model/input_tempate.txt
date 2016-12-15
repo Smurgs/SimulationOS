@@ -1,0 +1,9 @@
+arrival_time 1 appIn PID program_type priority memory_size
+
+arrival_time = any positive integer
+1 is constant
+appIn is constant
+PID = process ID, can be 1-20
+program_type = 1 (IO program) or 2 (forking program)
+priority >= 0, lower value is higher priority
+memory_size > 0

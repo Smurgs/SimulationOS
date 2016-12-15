@@ -121,6 +121,9 @@ public:
             }else if (mb[i].port == forkSCI) {
                 next_internal = 0;
                 aux.value = mb[i].value;
+                aux.value2 = mb[i].value2;
+                aux.value3 = mb[i].value3;
+                aux.value4 = mb[i].value4;
                 aux.port = processFork;
                 out_put.push_back(aux);
             }

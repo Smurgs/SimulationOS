@@ -128,6 +128,9 @@ public:
         }else if(type == PROGRAM_FORK){
             if (fork_count < 15){
                 aux.port = forkSCI;
+                aux.value4 = rand() % 1000 + 1;     // Set required memory block
+                aux.value3 = rand() % 6 + 1;        // Set priority
+                aux.value2 = PROGRAM_IO;            // Set program type
             }else {
                 aux.port = exitSCI;
             }

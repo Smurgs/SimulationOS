@@ -51,3 +51,34 @@ void queue(node *head, PCB process_data){
     temp->next->next = NULL;
     temp->next->data = process_data;
 }
+
+// Enqueue - priority queue
+void enqueue_priority(node *head, PCB process_data){
+    
+    // If empty, queue same way as regular queue
+    if (head->next == NULL){
+        enqueue_regular(head, process_data);
+        return;
+    }
+    
+    // Create new node
+    node *new_node = (node*) malloc(sizeof(node));
+    new_node->data = process_data;
+    
+    // Insert new node based on priority
+    node *temp = head;
+    while(temp->next != NULL){
+        if (process_data.priority < temp->next->data.priority){
+            new_node->next = temp->next;
+            temp->next = new_node;
+            return;
+            
+        }else if (temp->next->next == NULL){
+            new_node->next = NULL;
+            temp->next->next = new_node;
+            return;
+        }
+        
+        temp = temp->next;
+    }
+}

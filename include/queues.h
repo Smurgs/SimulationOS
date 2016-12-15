@@ -8,3 +8,4 @@
 node* init_queue();
 PCB dequeue(node*);
 void queue(node*, PCB);
+void enqueue_priority(node*, PCB);
