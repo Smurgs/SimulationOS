@@ -30,8 +30,9 @@
 #include "../data_structures/message.hpp" 
 #include "../data_structures/structures.h" 
 
-#define SCHEDULER_FCFS      1
-#define SCHEDULER_PRIORITY  2
+#define SCHEDULER_FCFS          1
+#define SCHEDULER_PRIORITY      2
+#define SCHEDULER_PREEMPTION    3
 
 using namespace boost::simulation::pdevs;
 using namespace boost::simulation;
@@ -61,6 +62,9 @@ private:
     string releaseMemory;
     string responseMemory;
     Scheduler *scheduler;
+    bool preemption;
+    int activeProcessPriority;
+    int activePID;
   
     // STATE VARIABLES
     bool processing;
@@ -101,8 +105,15 @@ public:
         // Set scheduler
         if (scheduler_option == SCHEDULER_FCFS){
             scheduler = new FCFS();
+            preemption = false;
         }else if (scheduler_option == SCHEDULER_PRIORITY){
             scheduler = new PriorityQueue();
+            preemption = false;
+        }else if (scheduler_option == SCHEDULER_PREEMPTION){
+            scheduler = new PriorityQueue();
+            preemption = true;
+            activeProcessPriority = 1000;
+            activePID = 0;
         }
 
         processing = false;
@@ -114,8 +125,6 @@ public:
             table[i] = { char(i+1), STATE_UNDEFINED };
         }
     }
-
-    /**
     * @Internal
     */
     void internal() noexcept {  
@@ -144,7 +153,7 @@ public:
         if (next_internal != pdevs::atomic<TIME, MSG>::infinity) {
             next_internal = next_internal - t;
         }
-
+        
         MSG aux;
         for (int i = 0; i < mb.size(); i++) {
             if (mb[i].port == appIn){
@@ -171,6 +180,16 @@ public:
 
                 // Enqueue PCB
                 scheduler->schedule(table[int(mb[i].value)-1]);                
+                if (preemption){
+                    if (table[int(mb[i].value)-1].priority < activeProcessPriority){
+                        MSG preempt;
+                        preempt.port = "preempt" + to_string(activePID);
+                        out_put.push_back(preempt);
+                        table[activePID-1].state = STATE_READY;
+                        processing = false;
+                        scheduler->schedule(table[activePID-1]);                
+                    }
+                }
 
                 // Set next internal
                 next_internal = 0;
@@ -185,6 +204,11 @@ public:
                         aux.value2 = temp.type;
                         out_put.push_back(aux);
                         table[temp.PID-1].state = STATE_RUNNING;
+                        
+                        if(preemption){
+                            activeProcessPriority = temp.priority;
+                            activePID = temp.PID;
+                        }
                     }
                 }
 
@@ -195,6 +219,16 @@ public:
 
                 // Enqueue PCB
                 scheduler->schedule(table[int(mb[i].value)-1]);                
+                if (preemption){
+                    if (table[int(mb[i].value)-1].priority < activeProcessPriority){
+                        MSG preempt;
+                        preempt.port = "preempt" + to_string(activePID);
+                        out_put.push_back(preempt);
+                        table[activePID-1].state = STATE_READY;
+                        processing = false;
+                        scheduler->schedule(table[activePID-1]);                
+                    }
+                }
 
                 // Set next internal
                 next_internal = 0;
@@ -209,6 +243,11 @@ public:
                         aux.value2 = temp.type;
                         out_put.push_back(aux);
                         table[temp.PID-1].state = STATE_RUNNING;
+                        
+                        if(preemption){
+                            activeProcessPriority = temp.priority;
+                            activePID = temp.PID;
+                        }
                     }
                 }
                 
@@ -227,6 +266,11 @@ public:
                     aux.value2 = temp.type;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
+                    
+                    if(preemption){
+                        activeProcessPriority = temp.priority;
+                        activePID = temp.PID;
+                    }
 
                     // Set next internal
                     next_internal = 0;
@@ -252,6 +296,11 @@ public:
                     aux.value2 = temp.type;
                     out_put.push_back(aux);
                     table[temp.PID-1].state = STATE_RUNNING;
+                        
+                    if(preemption){
+                        activeProcessPriority = temp.priority;
+                        activePID = temp.PID;
+                    }
                     
                     // Set next internal
                     next_internal = 0;

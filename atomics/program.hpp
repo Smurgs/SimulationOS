@@ -43,12 +43,14 @@ private:
     string writeSCI;
     string readSCI;
     string ctrlIn;
+    string preempt;
     string exitSCI;
     string forkSCI;
   
     // STATE VARIABLES
     bool executing;
     TIME next_internal;
+    BRITime time_remaining;
     int IO_count;
     int fork_count;
   
@@ -61,6 +63,7 @@ public:
         PID = pid;
         doneIO = "IOApp" + to_string(PID);
         ctrlIn = "ctrlApp" + to_string(PID);
+        preempt = "preempt" + to_string(PID);
         writeSCI = "writeSCI";
         readSCI = "readSCI";
         exitSCI = "exitSCI";
@@ -71,6 +74,7 @@ public:
         IO_count = 0;
         fork_count = 0;
         type = 0;
+        time_remaining = pdevs::atomic<TIME, MSG>::infinity;
         srand (time(NULL));
     }
 
@@ -78,6 +82,7 @@ public:
     * @Internal
     */
     void internal() noexcept {  
+        time_remaining = pdevs::atomic<TIME, MSG>::infinity;
         if (type == PROGRAM_IO){
             executing = false;
             next_internal = pdevs::atomic<TIME, MSG>::infinity;
@@ -155,12 +160,22 @@ public:
         for (int i = 0; i < mb.size(); i++) {
             if (mb[i].port == ctrlIn) {
                 executing = true;
-                next_internal = rand() % 100 + 1;
+                
+                if (time_remaining == pdevs::atomic<TIME, MSG>::infinity){
+                    next_internal = rand() % 100 + 1;
+                }else{
+                    next_internal = time_remaining;
+                }
 
                 // Set run type
                 if (mb[i].value2 != 0) {
                     type = mb[i].value2;
                 }
+
+            }else if (mb[i].port == preempt){
+                executing = false;
+                time_remaining = next_internal;
+                next_internal = pdevs::atomic<TIME, MSG>::infinity;
             }
         }
     }
