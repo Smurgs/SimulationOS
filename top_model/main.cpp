@@ -23,7 +23,6 @@
 #include "../vendor/input_event_stream.hpp"
 #include "../data_structures/message.hpp"
 #include "../atomics/program.hpp"
-#include "../atomics/programForks.hpp"
 #include "../atomics/rw_function.hpp"
 #include "../atomics/system_interface.hpp"
 #include "../atomics/kernel.hpp"
@@ -53,6 +52,8 @@ int main(int argc, char ** argv) {
         schedulerOption = SCHEDULER_FCFS;
     }else if(argv[1][1] == 'P'){
         schedulerOption = SCHEDULER_PRIORITY;
+    }else if(argv[1][1] == 'E'){
+        schedulerOption = SCHEDULER_PREEMPTION;
     }else{
         cout << "Invalid scheduling option" <<endl;
         exit(0);
