@@ -125,6 +125,7 @@ public:
             table[i] = { char(i+1), STATE_UNDEFINED };
         }
     }
+    /*
     * @Internal
     */
     void internal() noexcept {  
