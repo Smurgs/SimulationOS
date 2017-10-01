@@ -1,6 +1,5 @@
 # SimulationOS
 
-----
 ## ABSTRACT
 
 This report discusses the structure of the operating system simulation, and its results, which was developed as a final project for SYSC 4001 at Carleton University. The software was written in C++ and uses boost libraries. The simulation is modelled in accordance with PDEVS formalism. The project was carried out in a team of two.
