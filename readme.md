@@ -9,4 +9,5 @@ The developed software simulates essential components of an operating system. In
 
 ![alt text](https://github.com/Smurgs/SimulationOS/blob/master/OS_Overview.jpg "Simulation overview")
 
-##Full report included in repo
+----
+## Full report included in repo
